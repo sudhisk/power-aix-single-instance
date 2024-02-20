@@ -1,0 +1,23 @@
+- hosts: p125n50 
+  connection: local  
+  gather_facts: no
+
+  tasks:
+   - name: Get hostname
+     shell: echo $HOSTNAME
+     register: result
+
+   - name: Print the var
+     debug:
+       var: result.stdout
+
+
+   - name: Fetch IP address using shell command
+     vars:
+       command: "hostname -I | awk '{print $1}'"
+     shell: "{{ command }}"
+     register: ip_address_result
+
+   - name: Display the IP address
+     debug:
+       var: ip_address_result.stdout

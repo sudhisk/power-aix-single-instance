@@ -1,0 +1,79 @@
+- hosts: p125n50
+  remote_user: root
+  gather_facts: False
+  remote_user: root
+  vars:
+    config:
+      linux:
+         tools: ['bash', 'unzip', 'expect', 'doll'
+         ]
+         # !!! update !!!
+         optional_tools: ['less', 'dice'
+         ]
+  tasks:
+
+  - name: Verify the host OS level
+    raw: "/usr/bin/oslevel  | /usr/bin/awk -F '.' ' { print $1 $2 }'"
+    register: os_level
+    changed_when: false
+  - name: Set a aix73 flag
+    set_fact:
+       aix73: false
+  - name: Set a aix73 flag
+    set_fact:
+       aix73: true
+    when: (os_level.stdout_lines[0] | int) >= 73
+
+  - name: Check Package
+    ansible.builtin.shell: "lslpp -Lc | grep -i {{ item }}" 
+    with_items:
+     - "{{ config.linux.tools + config.linux.optional_tools }}"
+    register: checkrpm
+    ignore_errors: True
+   
+  - debug:
+      var: checkrpm
+  
+  - name: make rpm list
+    set_fact:
+     rpm_list: |-
+       [
+       {% for rp in checkrpm.results %}
+          {% if rp.rc != 0 %}
+            "{{rp.item}}",
+          {% endif %}
+       {% endfor %}
+       ]
+
+  - name: Install Linux tools
+    yum:
+      name: "{{ item }}"
+      state: present
+      use_backend: yum
+    environment:
+      PATH: "/opt/freeware/bin"
+    register: linux_tools_out
+    when: not aix73 and rpm_list is defined
+    failed_when:
+       - (config.linux.tools is not defined) or (linux_tools_out.rc != 0)
+    with_items:
+       - "{{ rpm_list }}"
+    ignore_errors: True
+    vars:
+      ansible_python_interpreter: /usr/bin/python3
+
+  - debug:  
+      var: linux_tools_out
+
+  - name: Install Linux tools on AIX73
+    dnf:
+      name: "{{ item }}"
+      state: latest
+    environment:
+      PATH: "/opt/freeware/bin"
+    register: linux_tools_out
+    when: aix73 and rpm_list is defined
+    failed_when:
+       - (config.linux.tools is not defined) or (linux_tools_out.rc != 0)
+    with_items:
+       - "{{ rpm_list }}"

@@ -1,0 +1,125 @@
+- name: Check if the OPatch_bkp source directory exists
+  stat:
+    path: "{{ora_home}}/OPatch_bkp"
+  register: source_opatch_dir_stat
+  ignore_errors: yes
+  when: apply_ru_gteq_1918
+
+- name: Move a OPatch directory from grid home to OPatch backup
+  command: mv "{{ ora_home }}/OPatch" "{{ ora_home }}/OPatch_bkp"
+  when: apply_ru_gteq_1918 and not source_opatch_dir_stat.stat.exists
+
+- name: Check if the folder exists
+  ansible.builtin.stat:
+    path: "{{ora_home}}/OPatch_bkp"
+  register: folder_check
+  when: apply_ru_gteq_1918
+
+- name: Display result
+  debug:
+    var: folder_check.stat.exists
+
+- name: copying OPatch source files from remote/nfs to Oracle home
+  unarchive:
+    src: "{{ opatch_path }}"
+    dest: "{{ ora_home }}"
+    keep_newer: yes
+    owner: "{{ora_user}}"
+    group: "{{ora_oinstall_group}}"
+  when:
+    - apply_ru_gteq_1918
+    - ora_binary_location in ['remote', 'nfs']
+
+
+- name: copying OPatch source files from local to Oracle home
+  ansible.builtin.shell:
+    cmd: "unzip -o {{ opatch_path }} -d {{ ora_home }}"
+  become_method: su
+  become: yes
+  when:
+    - ora_binary_location == 'local'
+    - apply_ru_gteq_1918
+
+- name: changing ownership to {{ora_home}}/OPatch
+  file:
+    path: "{{ ora_home }}/OPatch"
+    state: directory
+    recurse: yes
+    owner: "{{ora_user}}"
+    group: "{{ora_group}}"
+    mode: '0774'
+  when: ora_dir.stat.exists
+
+- name: RU gteq 1918 Name remote/local/nfs
+  shell: "expr {{ ru_path_gteq_1918 }} : '^.*p\\([0-9]*\\)_.*$'"
+  register: ru_name_set_gteq_1918
+  when: apply_ru_gteq_1918
+
+
+- name: Set ru_name gteq 1918 based on condition remote/local/nfs
+  set_fact:
+    ru_name: "{{ ru_name_set_gteq_1918 }}"
+  when: apply_ru_gteq_1918
+
+
+- name: Create a RU gteq 1918 directory with specific owner
+  file:
+    path: "{{ru_tgt_path_gteq_1918}}"  # Specify the directory path
+    state: directory
+    owner: "{{ora_user}}"
+    group: "{{ora_oinstall_group}}"
+    mode: "0755"
+  when: apply_ru_gteq_1918
+
+- name: RU gteq 1918 actual path merged with slash
+  set_fact:
+    merged_variable_gteq_1918: "{{ ru_tgt_path_gteq_1918 }}/{{ ru_name.stdout }}"
+  when: apply_ru_gteq_1918
+
+
+- name: Check if RU gteq 1918 is already unzipped
+  ansible.builtin.stat:
+    path: "{{done_dir}}/ru_unzipped_gteq_1918"
+  register: ru_unzipped_stat_gteq_1918
+
+
+- name: Extracting RU gteq 1918 source files from remote/nfs
+  unarchive:
+    src: "{{ ru_path_gteq_1918 }}"
+    dest: "{{ ru_tgt_path_gteq_1918 }}"
+    keep_newer: yes
+    owner: "{{ora_user}}"
+    group: "{{ora_oinstall_group}}"
+  when:
+    - apply_ru_gteq_1918
+    - ora_binary_location in ['remote', 'nfs']
+    - not ru_unzipped_stat_gteq_1918.stat.exists
+
+
+- name: Extracting RU gteq 1918 source files from local
+  ansible.builtin.shell:
+    cmd: "unzip -o {{ ru_path_gteq_1918 }} -d {{ ru_tgt_path_gteq_1918 }}"
+  become_user: "{{ ora_user }}"
+  become_method: su
+  become: yes
+  when:
+    - ora_binary_location == 'local'
+    - apply_ru
+    - not ru_unzipped_stat_gteq_1918.stat.exists
+
+
+- name: Touch ru_unzipped gteq 1918 file
+  ansible.builtin.command: touch "{{done_dir}}"/ru_unzipped_gteq_1918
+  when: not ru_unzipped_stat_gteq_1918.stat.exists
+
+
+- name: Apply 19.18 Greater than Patches
+  shell: "{{ora_home}}/OPatch/opatchauto apply {{merged_variable_gteq_1918}} -binary -oh {{ora_home}}  >> {{ done_dir }}/applyru_oracle_gteq_1918.out 2>&1"
+  become: yes
+  become_method: su
+  become_user: "{{ora_user}}"
+  register: applyru_install
+  when: apply_ru_gteq_1918
+- debug:
+    msg: "apply ru gteq 1918 :: {{applyru_install}}"
+

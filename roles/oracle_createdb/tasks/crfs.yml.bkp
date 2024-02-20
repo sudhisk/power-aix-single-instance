@@ -3,7 +3,7 @@
 - name: create {{ora_data_fs}}/{{ora_sid}}{{item.fs_name}} filesystem
   ibm.power_aix.filesystem:
     filesystem:    "{{ora_data_fs}}/{{ora_sid}}{{item.fs_name}}"
-    attributes: "size={{item.size}},agblksize={{ item.bs | default(4096) }}"
+    attributes: "size={{item.size}}"
     state: present
     vg: "{{ora_data_vg}}"
     auto_mount: True

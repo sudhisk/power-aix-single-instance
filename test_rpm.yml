@@ -1,0 +1,9 @@
+- name: Install an RPM package with dnf
+  hosts: p224n95.pbm.ihost.com
+  become: yes  # You may need root (sudo) privileges to install packages
+  tasks:
+    - name: Install the RPM package
+      dnf:
+        name: bash  # Replace with the name of the RPM package you want to install
+        state: present  # Use 'latest' to ensure it's the latest version, 'present' to install
+        use_backend: dnf4

@@ -1,8 +1,31 @@
-- name: Check AIX required Fileset present or not
+- name: Check AIX required {{item}} Fileset present or not
   command: lslpp -l {{item}}
   register: fileset_output
   failed_when: fileset_output.rc not in [ 0, 1 ]
-- name: Fileset status
-  fail:
-    msg: "{{fileset_output.stderr}}"
-  when: fileset_output.stderr != ""
+
+- name: Display result
+  debug:
+    var: fileset_output.stderr
+  when: fileset_output.rc not in [ 0 ]
+
+- name: Install additional AIX {{item}}  filesets
+  command:
+    cmd:   "/usr/sbin/installp -acgXd . -Y {{ item }}"
+    chdir: "{{ preconfig.lpp_src.nfs_mount.0.0 }}
+           {%- if preconfig.lpp_src.subdir is defined and
+                  preconfig.lpp_src.subdir | default('', true) | length > 0
+           -%}
+              {{ '/' + preconfig.lpp_src.subdir }}
+           {%- endif -%}"
+  when: 
+    - fileset_output.rc in [ 1 ]
+    - not preconfig.use_powervs_std_nim
+
+- name: Install additional AIX {{item}} filesets using PowerVS mount
+  command:
+    cmd:   "/usr/sbin/installp -acgXd . -Y {{ item }}"
+    chdir: "{{ preconfig.powervs_loc }}"
+  when: 
+    - fileset_output.rc in [ 1 ]
+    - preconfig.use_powervs_std_nim
+

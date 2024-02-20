@@ -1,0 +1,5 @@
+- name: Move a directory using Ansible
+  hosts: localhost
+  tasks:
+    - name: Move the directory
+      command: mv /home/ansible/.ansible/collections/ansible_collections/ibm/ansible-power-aix-oracle/test /home/ansible/.ansible/collections/ansible_collections/ibm/ansible-power-aix-oracle/test_bkp
