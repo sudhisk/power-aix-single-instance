@@ -104,7 +104,7 @@
   become: yes
   when:
     - ora_binary_location in ['local','nfs']
-    - apply_ru
+    - apply_ru_gteq_1918
     - not ru_unzipped_stat_gteq_1918.stat.exists
 
 
