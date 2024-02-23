@@ -137,7 +137,7 @@
   register: ru_unzipped_stat
 
 
-- name: Extracting RU source files from remote/nfs
+- name: Extracting RU source files from remote
   unarchive:
     src: "{{ ru_path }}"
     dest: "{{ ru_tgt_path }}"
@@ -146,17 +146,17 @@
     group: "{{ora_oinstall_group}}"
   when: 
     - apply_ru
-    - ora_binary_location in ['remote', 'nfs']
+    - ora_binary_location == 'remote'
     - not ru_unzipped_stat.stat.exists
 
-- name: Extracting RU source files from local
+- name: Extracting RU source files from local/nfs
   ansible.builtin.shell:
     cmd: "unzip -o {{ ru_path }} -d {{ ru_tgt_path }}"
   become_user: "{{ ora_grid_user }}"
   become_method: su
   become: yes
   when:
-    - ora_binary_location == 'local'
+    - ora_binary_location in ['local', 'nfs']
     - apply_ru
     - not ru_unzipped_stat.stat.exists
 
@@ -180,7 +180,7 @@
     path: "{{ora_home}}/runInstaller"
   register: ora_file
 
-- name: Extracting oracle Single instance source files from remote/nfs
+- name: Extracting oracle Single instance source files from remote
   unarchive:
     src: "{{item}}"
     dest: "{{ ora_home }}"
@@ -190,16 +190,16 @@
   loop:   "{{ oracle_source_files |flatten(levels=1) }}"
   when:
     - not ora_file.stat.exists
-    - ora_binary_location in ['remote', 'nfs']
+    - ora_binary_location == 'remote'
 
 
-- name: Extracting oracle Single instance source files from local
+- name: Extracting oracle Single instance source files from local/nfs
   ansible.builtin.shell:
     cmd: "unzip -o {{ oracle_source_files[0] }} -d {{ ora_home }}"
   become_method: su 
   become: yes
   when:
-    - ora_binary_location == 'local'
+    - ora_binary_location in ['local','nfs']
     - not ora_file.stat.exists
 
 
@@ -225,7 +225,7 @@
     var: folder_check.stat.exists
 
 
-- name: Extracting OPatch from remote/nfs to oracle home
+- name: Extracting OPatch from remote to oracle home
   unarchive:
     src: "{{ opatch_path }}"
     dest: "{{ ora_home }}"
@@ -234,16 +234,16 @@
     group: "{{ora_oinstall_group}}"
   when: 
     - apply_ru
-    - ora_binary_location in ['remote', 'nfs']
+    - ora_binary_location == 'remote'
 
 
-- name: Extracting OPatch from local to oracle home
+- name: Extracting OPatch from local/nfs to oracle home
   ansible.builtin.shell:
     cmd: "unzip -o {{ opatch_path }} -d {{ ora_home }}"
   become: yes
   become_method: su
   when:
-    - ora_binary_location == 'local'
+    - ora_binary_location in ['local','nfs']
     - apply_ru
 
 - name: changing ownership to {{ora_home}}

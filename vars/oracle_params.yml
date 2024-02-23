@@ -14,7 +14,7 @@ oraclegridaix19c:
            - /repos/images/oracle/19c/V982588-01_193000_grid.zip
 # Set below variables when using applyRU along with installation
 ru_path: /repos/images/oracle/19c/RU19.17/RU19.17-p34416665_190000_AIX64-5L.zip
-ru_path_gteq_1918: /repos/images/oracle/19c/RU19.19/p35037840_190000_AIX64-5L.zip
+ru_path_gteq_1918: /repos/images/oracle/19c/RU19.21/p35642822_190000_AIX64-5L_RU19.21.zip
 opatch_path: /repos/images/oracle/opatch/12.2.0.1.39/p6880880_190000_AIX64-5L.zip
 
 
